@@ -15,15 +15,16 @@ NUMBER_HEIGHT = IMG_HEIGHT - 9 # (하여백 제거용)
 IMG_LENGTH = 6 # 글자수
 
 MODEL_PATH = './model/captcha_ml_model.pkl'
-TARGET_PATH = './data/target/target_005.png'
+# TARGET_PATH = './data/target/target_001.png'
 
-def main():    
-    # 2. 결과 도출
-    try:
-        print(f"Prediction Result: {result_img(TARGET_PATH)}")
-    except FileNotFoundError as e:
-        print(e)
-
+def main():
+    for i in range(1, 11):
+        target_path = f'./data/target/target_{i:03d}.png'
+        try:
+            print(f"[{target_path}] Prediction Result: {result_img(target_path)}")
+        except FileNotFoundError as e:
+            print(f"Error processing {target_path}: {e}")
+            
 # 캡차 이미지를 문자 단위로 균등하게 6등분하여 자르고 데이터화하는 함수
 def preprocess_captcha(img_path):
     # 흑백 이미지로 읽기
