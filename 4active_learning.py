@@ -8,24 +8,40 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 
-# ==========================================
-# 1. 글로벌 설정 값 (기존 규격 및 여백 제거 로직 유지)
-# ==========================================
-IMG_WIDTH = 130
-IMG_HEIGHT = 35
-NUMBER_WIDTH_L = 8
-NUMBER_WIDTH_R = IMG_WIDTH - 14
-NUMBER_WIDTH = NUMBER_WIDTH_R - NUMBER_WIDTH_L
-NUMBER_HEIGHT = IMG_HEIGHT - 9
-IMG_LENGTH = 6
+import dotenv, re
+from datetime import datetime, timedelta
 
-MODEL_PATH = './model/captcha_ml_model.pkl'
-LEARNING_DIR = './data/learning'  # 최종 정답 데이터가 저장될 폴더
+# .env 파일 로드
+dotenv.load_dotenv()
 
-# [수정 필수] 수집 대상 숲나들e URL
-TARGET_URL = "https://www.foresttrip.go.kr/rep/or/sssn/fcfsRsrvtSmplPssblGoodsDetls.do?_csrf=7d4e7e84-d5f9-42c3-9e72-d311721fb65a&netfunnel_key=50C7ED7FED3F89ADDACCCEF3760BAFE7C803B31FCF66E75E8A252379885E811D407429C2AC9B02203BF93AF9A4692B21C6D48AECFC32CBC9119DBC5934339CF6559C01BA4D3F4CD8C2EA8571C1C80B31AA8952C900AB807866410579BE057F4836CC07A60445CE07A66A00EDEFAC45E82C312C302C30&srchInsttArcd=7&srchInsttId=ID02030116&srchRsrvtBgDt=20260823&srchRsrvtEdDt=20260824&srchStngNofpr=1&srchSthngCnt=1&srchWord=&srchUseDt=&houseCampSctin=&rsrvtPssblYn=N&rsrvtWtngSctin=01&srchHouseCharg=&srchCampCharg=&goodsClsscHouseCdArr=&goodsClsscCampCdArr=&srchInsttTpcd=&cmdogYn=N&bbqYn=N&dsprsYn=N&otsdWeterYn=N&wifiYn=N&snowPlaceYn=N&srchMyLtd=&srchMyLng=&srchDstnc=&gNowPage=1&srchGoodsId=&hmpgId=FRIP"
-TOTAL_IMAGES_TO_COLLECT = 10  # 한 세션에 레이블링할 목표 이미지 개수
+# ==================================================
+# 1. 글로벌 설정 값 (데이터 그림파일, 여백 제거, 폴더 경로)
+# ==================================================
+# .env 파일 로드
+from common.env_config import get_env_int, get_env_str
+IMG_WIDTH = get_env_int("IMG_WIDTH", 130)
+IMG_HEIGHT = get_env_int("IMG_HEIGHT", 35)
+NUMBER_WIDTH_L = get_env_int("DEL_WIDTH_L", 8) # 숫자가 시작하는 픽셀 (좌여백 제거용)
+NUMBER_WIDTH_R = IMG_WIDTH - get_env_int("DEL_WIDTH_R", 14) # 숫자가 끝나는 픽셀 (우여백 제거용)
+NUMBER_WIDTH = NUMBER_WIDTH_R - NUMBER_WIDTH_L # IMG_LENGTH = 6 나누기 위해 6의 배수 맞춤
+NUMBER_HEIGHT = IMG_HEIGHT - get_env_int("DEL_WIDTH_B", 9) # (하여백 제거용)
+IMG_LENGTH = get_env_int("COUNT_OF_NUMBER", 6) # 글자수
+MODEL_PATH = get_env_str("MODEL_PATH", "./model/captcha_ml_model.pkl")
+# 최종 정답 데이터가 저장될 폴더
+LEARNING_DIR = get_env_str("IMG_FOLDER_PATH", "./data/learning")
 
+# ==================================================
+# 2. URL 자동 생성 (Today +30D)
+# ==================================================
+# 1) 날짜 계산
+bg_date = (datetime.now() + timedelta(days=30)).strftime("%Y%m%d")
+ed_date = (datetime.now() + timedelta(days=31)).strftime("%Y%m%d")
+base_url = os.getenv("BASE_URL")
+# 2) 정규식 패턴으로 날짜 교체
+new_url = re.sub(r"srchRsrvtBgDt=\d{8}", f"srchRsrvtBgDt={bg_date}", base_url)
+new_url = re.sub(r"srchRsrvtEdDt=\d{8}", f"srchRsrvtEdDt={ed_date}", new_url)
+TARGET_URL = new_url
+TOTAL_IMAGES_TO_COLLECT = int(os.getenv("AUTO_DATA_TO_COLLECT",'10')) # # 한 세션에 레이블링할 이미지 개수
 
 # ==========================================
 # 2. 이미지 전처리 함수 (파일 경로 대신 바이너리 데이터 직접 처리)

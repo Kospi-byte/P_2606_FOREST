@@ -8,6 +8,22 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+import dotenv
+# .env 파일 로드
+dotenv.load_dotenv()
+
+# ==================================================
+# 1. 글로벌 설정 값 (데이터 그림파일, 여백 제거, 폴더 경로)
+# ==================================================
+IMG_WIDTH = int(os.getenv("IMG_WIDTH", '130'))
+IMG_HEIGHT = int(os.getenv("IMG_HEIGHT", '35'))
+NUMBER_WIDTH_L = int(os.getenv("DEL_WIDTH_L", '8')) # 숫자가 시작하는 픽셀 (좌여백 제거용)
+NUMBER_WIDTH_R = IMG_WIDTH - int(os.getenv("DEL_WIDTH_R", '14')) # 숫자가 끝나는 픽셀 (우여백 제거용)
+NUMBER_WIDTH = NUMBER_WIDTH_R - NUMBER_WIDTH_L # IMG_LENGTH = 6 나누기 위해 6의 배수 맞춤
+NUMBER_HEIGHT = IMG_HEIGHT - int(os.getenv("DEL_WIDTH_B", '9')) # (하여백 제거용)
+IMG_LENGTH = int(os.getenv("COUNT_OF_NUMBER", '6')) # 글자수
+MODEL_PATH = os.getenv("MODEL_PATH", "./model/captcha_ml_model.pkl")
+
 # ==========================================
 # 1. 글로벌 설정 값 (기존 규격 및 여백 제거 로직 유지)
 # ==========================================
@@ -20,7 +36,7 @@ NUMBER_HEIGHT = IMG_HEIGHT - 9
 IMG_LENGTH = 6
 
 MODEL_PATH = './model/captcha_ml_model.pkl'
-TARGET_URL = "https://www.foresttrip.go.kr/rep/or/sssn/fcfsRsrvtSmplPssblGoodsDetls.do?_csrf=a2366c2c-65ce-4307-b0bd-30f76db51283&netfunnel_key=127A4DC992BD2B1EBF1816E08561DC22C626C9966723C139F0217908BB4DC1D596EB9561A9FD8847A8A00069D4C9459122CE8908AF0A06CA82C614162A2D88E5559C01BA4D3F4CD8C2EA8571C1C80B315E3B57A632317FB5338B22D89E9B8B70B62953366D8F61C3A2F7BAD4E036C81F302C312C302C30&srchInsttArcd=7&srchInsttId=ID02030116&srchRsrvtBgDt=20260715&srchRsrvtEdDt=20260716&srchStngNofpr=1&srchSthngCnt=1&srchWord=&srchUseDt=&houseCampSctin=&rsrvtPssblYn=N&rsrvtWtngSctin=01&srchHouseCharg=&srchCampCharg=&goodsClsscHouseCdArr=&goodsClsscCampCdArr=&srchInsttTpcd=&cmdogYn=N&bbqYn=N&dsprsYn=N&otsdWeterYn=N&wifiYn=N&snowPlaceYn=N&srchMyLtd=&srchMyLng=&srchDstnc=&gNowPage=1&srchGoodsId=&hmpgId=FRIP"
+TARGET_URL = "https://www.foresttrip.go.kr/rep/or/fcfsRsrvtMain.do?hmpgId=FRIP&menuId=001001"
 
 
 # ==========================================
@@ -114,8 +130,10 @@ def main():
                 captcha_input.clear()
                 captcha_input.send_keys(pred_text)
                 
-                # 3) 약관에 동의합니다 체크 박스 체크하기
-                agree_checkbox = driver.find_element(By.ID, "arr_01")
+                # 3) 약관에 동의합니다 체크 박스 체크하기                
+                # 바로가기-통합예약-일반예약 체크박스   #chkAgree
+                # 일반예약-선착순예약 의 체크박스       #arr_01
+                agree_checkbox = driver.find_element(By.CSS_SELECTOR, '#chkAgree, #arr_01')
                 if not agree_checkbox.is_selected():
                     agree_checkbox.click()
                     
