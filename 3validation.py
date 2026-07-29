@@ -2,37 +2,16 @@ import os
 import cv2
 import numpy as np
 import joblib
-
-# import dotenv
-# # .env 파일 로드
-# dotenv.load_dotenv()
-
-# ==================================================
-# 1. 글로벌 설정 값 (데이터 그림파일, 여백 제거, 폴더 경로)
-# ==================================================
-# .env 파일 로드
-from common.env_config import get_env_int, get_env_str
-IMG_WIDTH = get_env_int("IMG_WIDTH", 130)
-IMG_HEIGHT = get_env_int("IMG_HEIGHT", 35)
-NUMBER_WIDTH_L = get_env_int("DEL_WIDTH_L", 8) # 숫자가 시작하는 픽셀 (좌여백 제거용)
-NUMBER_WIDTH_R = IMG_WIDTH - get_env_int("DEL_WIDTH_R", 14) # 숫자가 끝나는 픽셀 (우여백 제거용)
-NUMBER_WIDTH = NUMBER_WIDTH_R - NUMBER_WIDTH_L # IMG_LENGTH = 6 나누기 위해 6의 배수 맞춤
-NUMBER_HEIGHT = IMG_HEIGHT - get_env_int("DEL_WIDTH_B", 9) # (하여백 제거용)
-IMG_LENGTH = get_env_int("COUNT_OF_NUMBER", 6) # 글자수
-MODEL_PATH = get_env_str("MODEL_PATH", "./model/captcha_ml_model.pkl")
-
-
-# # ==================================================
-# # 1. 글로벌 설정 값 (데이터 그림파일, 여백 제거, 폴더 경로)
-# # ==================================================
-# IMG_WIDTH = int(os.getenv("IMG_WIDTH", '130'))
-# IMG_HEIGHT = int(os.getenv("IMG_HEIGHT", '35'))
-# NUMBER_WIDTH_L = int(os.getenv("DEL_WIDTH_L", '8')) # 숫자가 시작하는 픽셀 (좌여백 제거용)
-# NUMBER_WIDTH_R = IMG_WIDTH - int(os.getenv("DEL_WIDTH_R", '14')) # 숫자가 끝나는 픽셀 (우여백 제거용)
-# NUMBER_WIDTH = NUMBER_WIDTH_R - NUMBER_WIDTH_L # IMG_LENGTH = 6 나누기 위해 6의 배수 맞춤
-# NUMBER_HEIGHT = IMG_HEIGHT - int(os.getenv("DEL_WIDTH_B", '9')) # (하여백 제거용)
-# IMG_LENGTH = int(os.getenv("COUNT_OF_NUMBER", '6')) # 글자수
-# MODEL_PATH = os.getenv("MODEL_PATH", "./model/captcha_ml_model.pkl")
+from common.env_config import (
+    IMG_WIDTH,
+    IMG_HEIGHT,
+    NUMBER_WIDTH_L,
+    NUMBER_WIDTH_R,
+    NUMBER_WIDTH,
+    NUMBER_HEIGHT,
+    IMG_LENGTH,    
+    MODEL_PATH
+)
 
 def main():
     for i in range(1, 11):

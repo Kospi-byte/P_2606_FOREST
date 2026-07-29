@@ -8,36 +8,22 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-import dotenv
-# .env 파일 로드
-dotenv.load_dotenv()
-
 # ==================================================
 # 1. 글로벌 설정 값 (데이터 그림파일, 여백 제거, 폴더 경로)
 # ==================================================
-IMG_WIDTH = int(os.getenv("IMG_WIDTH", '130'))
-IMG_HEIGHT = int(os.getenv("IMG_HEIGHT", '35'))
-NUMBER_WIDTH_L = int(os.getenv("DEL_WIDTH_L", '8')) # 숫자가 시작하는 픽셀 (좌여백 제거용)
-NUMBER_WIDTH_R = IMG_WIDTH - int(os.getenv("DEL_WIDTH_R", '14')) # 숫자가 끝나는 픽셀 (우여백 제거용)
+# .env 파일 로드
+from common.env_config import get_env_int, get_env_str
+IMG_WIDTH = get_env_int("IMG_WIDTH", 130)
+IMG_HEIGHT = get_env_int("IMG_HEIGHT", 35)
+NUMBER_WIDTH_L = get_env_int("DEL_WIDTH_L", 8) # 숫자가 시작하는 픽셀 (좌여백 제거용)
+NUMBER_WIDTH_R = IMG_WIDTH - get_env_int("DEL_WIDTH_R", 14) # 숫자가 끝나는 픽셀 (우여백 제거용)
 NUMBER_WIDTH = NUMBER_WIDTH_R - NUMBER_WIDTH_L # IMG_LENGTH = 6 나누기 위해 6의 배수 맞춤
-NUMBER_HEIGHT = IMG_HEIGHT - int(os.getenv("DEL_WIDTH_B", '9')) # (하여백 제거용)
-IMG_LENGTH = int(os.getenv("COUNT_OF_NUMBER", '6')) # 글자수
-MODEL_PATH = os.getenv("MODEL_PATH", "./model/captcha_ml_model.pkl")
+NUMBER_HEIGHT = IMG_HEIGHT - get_env_int("DEL_WIDTH_B", 9) # (하여백 제거용)
+IMG_LENGTH = get_env_int("COUNT_OF_NUMBER", 6) # 글자수
+MODEL_PATH = get_env_str("MODEL_PATH", "./model/captcha_ml_model.pkl")
 
-# ==========================================
-# 1. 글로벌 설정 값 (기존 규격 및 여백 제거 로직 유지)
-# ==========================================
-IMG_WIDTH = 130
-IMG_HEIGHT = 35
-NUMBER_WIDTH_L = 8
-NUMBER_WIDTH_R = IMG_WIDTH - 14
-NUMBER_WIDTH = NUMBER_WIDTH_R - NUMBER_WIDTH_L
-NUMBER_HEIGHT = IMG_HEIGHT - 9
-IMG_LENGTH = 6
-
-MODEL_PATH = './model/captcha_ml_model.pkl'
+# 추첨 신청 URL (날짜 없음)
 TARGET_URL = "https://www.foresttrip.go.kr/rep/or/fcfsRsrvtMain.do?hmpgId=FRIP&menuId=001001"
-
 
 # ==========================================
 # 2. 이미지 전처리 함수
@@ -65,13 +51,11 @@ def preprocess_captcha_from_bytes(img_bytes):
         
     return np.array(char_images)
 
-
 # ==========================================
 # 3. 메인 자동화 프로세스
 # ==========================================
 def main():
-    print("======= 숲나들e 자동 추첨 신청 시스템 (무한루프 버전) =======")
-    
+    print("======= 숲나들e 자동 추첨 신청 시스템 (무한루프 버전) =======")    
     if not os.path.exists(MODEL_PATH):
         print(f"⚠️ 학습된 모델 파일({MODEL_PATH})이 존재하지 않습니다!")
         return
@@ -81,8 +65,7 @@ def main():
     
     chrome_options = Options()
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    chrome_options.add_experimental_option('useAutomationExtension', False)
-    
+    chrome_options.add_experimental_option('useAutomationExtension', False)    
     print("🌐 브라우저를 구동합니다...")
     driver = webdriver.Chrome(options=chrome_options)
     
@@ -163,7 +146,6 @@ def main():
         print("🔒 웹 브라우저를 닫는 중...")
         driver.quit()
         print("🏁 매크로 프로그램이 완전히 종료되었습니다.")
-
 
 if __name__ == "__main__":
     main()

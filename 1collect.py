@@ -1,27 +1,12 @@
-import os
-import time
-import random
+import os, time, random
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-import dotenv, re
-from datetime import datetime, timedelta
 
-# .env 파일 로드
-dotenv.load_dotenv()
+from common.make_url import get_url
+from common.env_config import TOTAL_IMAGES_TO_COLLECT
 
-# ==================================================
-# 2. URL 자동 생성 (Today +30D)
-# ==================================================
-# 1) 날짜 계산
-bg_date = (datetime.now() + timedelta(days=30)).strftime("%Y%m%d")
-ed_date = (datetime.now() + timedelta(days=31)).strftime("%Y%m%d")
-base_url = os.getenv("BASE_URL")
-# 2) 정규식 패턴으로 날짜 교체
-new_url = re.sub(r"srchRsrvtBgDt=\d{8}", f"srchRsrvtBgDt={bg_date}", base_url)
-new_url = re.sub(r"srchRsrvtEdDt=\d{8}", f"srchRsrvtEdDt={ed_date}", new_url)
-TARGET_URL = new_url
-TOTAL_IMAGES_TO_COLLECT = int(os.getenv("TOTAL_IMAGES_TO_COLLECT",'10')) # 수집할 이미지 개수
+TARGET_URL = get_url('first')
 
 def collect_captcha_images(target_url, save_dir='./data/learning', count=100):
     """

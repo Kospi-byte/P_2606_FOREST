@@ -1,6 +1,4 @@
-import os
-import time
-import random
+import os, time, random
 import cv2
 import numpy as np
 import joblib
@@ -8,40 +6,22 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 
-import dotenv, re
-from datetime import datetime, timedelta
+from common.make_url import get_url
+from common.env_config import (
+    IMG_WIDTH,
+    IMG_HEIGHT,
+    NUMBER_WIDTH_L,
+    NUMBER_WIDTH_R,
+    NUMBER_WIDTH,
+    NUMBER_HEIGHT,
+    IMG_LENGTH,    
+    MODEL_PATH,
+    IMG_FOLDER_PATH,
+    AUTO_DATA_TO_COLLECT
+)
 
-# .env 파일 로드
-dotenv.load_dotenv()
-
-# ==================================================
-# 1. 글로벌 설정 값 (데이터 그림파일, 여백 제거, 폴더 경로)
-# ==================================================
-# .env 파일 로드
-from common.env_config import get_env_int, get_env_str
-IMG_WIDTH = get_env_int("IMG_WIDTH", 130)
-IMG_HEIGHT = get_env_int("IMG_HEIGHT", 35)
-NUMBER_WIDTH_L = get_env_int("DEL_WIDTH_L", 8) # 숫자가 시작하는 픽셀 (좌여백 제거용)
-NUMBER_WIDTH_R = IMG_WIDTH - get_env_int("DEL_WIDTH_R", 14) # 숫자가 끝나는 픽셀 (우여백 제거용)
-NUMBER_WIDTH = NUMBER_WIDTH_R - NUMBER_WIDTH_L # IMG_LENGTH = 6 나누기 위해 6의 배수 맞춤
-NUMBER_HEIGHT = IMG_HEIGHT - get_env_int("DEL_WIDTH_B", 9) # (하여백 제거용)
-IMG_LENGTH = get_env_int("COUNT_OF_NUMBER", 6) # 글자수
-MODEL_PATH = get_env_str("MODEL_PATH", "./model/captcha_ml_model.pkl")
-# 최종 정답 데이터가 저장될 폴더
-LEARNING_DIR = get_env_str("IMG_FOLDER_PATH", "./data/learning")
-
-# ==================================================
-# 2. URL 자동 생성 (Today +30D)
-# ==================================================
-# 1) 날짜 계산
-bg_date = (datetime.now() + timedelta(days=30)).strftime("%Y%m%d")
-ed_date = (datetime.now() + timedelta(days=31)).strftime("%Y%m%d")
-base_url = os.getenv("BASE_URL")
-# 2) 정규식 패턴으로 날짜 교체
-new_url = re.sub(r"srchRsrvtBgDt=\d{8}", f"srchRsrvtBgDt={bg_date}", base_url)
-new_url = re.sub(r"srchRsrvtEdDt=\d{8}", f"srchRsrvtEdDt={ed_date}", new_url)
-TARGET_URL = new_url
-TOTAL_IMAGES_TO_COLLECT = int(os.getenv("AUTO_DATA_TO_COLLECT",'10')) # # 한 세션에 레이블링할 이미지 개수
+TOTAL_IMAGES_TO_COLLECT = AUTO_DATA_TO_COLLECT # 한 세션에 레이블링할 이미지 개수
+TARGET_URL = get_url('first')
 
 # ==========================================
 # 2. 이미지 전처리 함수 (파일 경로 대신 바이너리 데이터 직접 처리)
@@ -76,7 +56,7 @@ def preprocess_captcha_from_bytes(img_bytes):
 # 3. 실시간 액티브 러닝 코어 함수
 # ==========================================
 def active_learning_collector(target_url, count=10):
-    os.makedirs(LEARNING_DIR, exist_ok=True)
+    os.makedirs(IMG_FOLDER_PATH, exist_ok=True)
     
     # 1) 가중치 모델 로드
     if not os.path.exists(MODEL_PATH):
@@ -87,6 +67,7 @@ def active_learning_collector(target_url, count=10):
     
     # 2) 셀레니움 브라우저 설정 및 시작
     chrome_options = Options()
+    chrome_options.add_argument("--window-size=1200,1000")
     # 크롬 상단에 "자동화된 테스트 소프트웨어에 의해 제어되고 있습니다" 문구 숨기기
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option('useAutomationExtension', False)
@@ -96,13 +77,16 @@ def active_learning_collector(target_url, count=10):
     driver = webdriver.Chrome(options=chrome_options)
     
     try:
-        # 대상 URL 접속
+        # 대상 URL 접속      
         driver.get(target_url)
-        print(f"🔗 접속 완료: {target_url}")
-        print("🆔 캡차 화면이 나오도록 로그인 및 페이지 이동을 완료해 주세요 ...")
+        # print(f"🔗 접속 완료: {target_url}")
+        # 60자가 넘으면 앞 60자만 보여주고 뒤에 ... 붙이기
+        short_url = target_url[:60] + "..." if len(target_url) > 60 else target_url        
+        print(f"🔗 접속 완료: {short_url}")
+        print("💡 캡차 이미지가 완전히 로딩될 때까지 10초간 대기합니다...")
         # 직접 로그인
         print("🆔 로그인 해주세요...")
-        time.sleep(10) 
+        time.sleep(10)         
         
         print(f"\n🚀 실시간 반자동 레이블링 시작 (목표 수량: {count}개)...")
         print("=" * 70)
@@ -156,12 +140,12 @@ def active_learning_collector(target_url, count=10):
                     print(f"✍️ 수동 수정 완료! 오답 수정 결과 -> [{final_label}]")
                 
                 # 중복 파일명 방지 처리 및 저장
-                file_path = os.path.join(LEARNING_DIR, f"{final_label}.png")
+                file_path = os.path.join(IMG_FOLDER_PATH, f"{final_label}.png")
                 if os.path.exists(file_path):
                     dup_count = 1
-                    while os.path.exists(os.path.join(LEARNING_DIR, f"{final_label}_{dup_count}.png")):
+                    while os.path.exists(os.path.join(IMG_FOLDER_PATH, f"{final_label}_{dup_count}.png")):
                         dup_count += 1
-                    file_path = os.path.join(LEARNING_DIR, f"{final_label}_{dup_count}.png")
+                    file_path = os.path.join(IMG_FOLDER_PATH, f"{final_label}_{dup_count}.png")
                 
                 # 캡차 이미지 엘리먼트 파일로 최종 확정 저장
                 captcha_element.screenshot(file_path)
@@ -182,8 +166,8 @@ def active_learning_collector(target_url, count=10):
     finally:
         driver.quit()
         print("\n==================================================")
-        print(f"🎉 반자동 실시간 수집 완료! 총 {success_count}개의 고품질 데이터 구축.")
-        print(f"📂 저장된 폴더: {os.path.abspath(LEARNING_DIR)}")
+        print(f"🎉 반자동 실시간 수집 완료! 총 {success_count}개의 데이터 추가.")
+        print(f"📂 저장된 폴더: {os.path.abspath(IMG_FOLDER_PATH)}")
         print("💡 이제 기존 머신러닝 학습 코드를 돌려 모델 성능을 한 단계 올리세요!")
         print("==================================================")
 
